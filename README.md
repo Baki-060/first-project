@@ -1,88 +1,141 @@
-# first-project
-My first project.
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIHAM ❤️</title>
+<title>SYSTEM</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
-  background:#000;
-  overflow:hidden;
-  height:100vh;
-  font-family:monospace;
+ background:#000;
+ color:#00ff41;
+ font-family:monospace;
+ overflow:hidden;
 }
-canvas{display:block}
-.name{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  color:#ffb6d9;
-  font-size:32px;
-  font-family:cursive;
-  text-shadow:0 0 10px #ff007f,0 0 30px #ff007f;
-  opacity:0;
-  animation:show 3s forwards 2s;
+canvas{
+ position:fixed;
+ inset:0;
+ width:100%;
+ height:100%;
 }
-@keyframes show{to{opacity:1}}
+.terminal{
+ position:absolute;
+ top:50%;
+ left:50%;
+ transform:translate(-50%,-50%);
+ width:90%;
+ text-align:center;
+ text-shadow:0 0 12px #00ff41;
+}
+#title{
+ font-size:clamp(30px,8vw,65px);
+ font-weight:bold;
+ letter-spacing:5px;
+}
+#text{
+ margin-top:20px;
+ font-size:clamp(12px,3vw,18px);
+ line-height:2;
+ color:#00ff41;
+}
+.cursor{
+ animation:blink .7s infinite;
+}
+@keyframes blink{
+ 50%{opacity:0}
+}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div class="name">SIHAM ❤️</div>
-<script>
-const c=document.getElementById("c");
-const ctx=c.getContext("2d");
-let w,h,particles=[];
-function resize(){
- w=c.width=innerWidth;
- h=c.height=innerHeight;
-}
-resize();window.onresize=resize;
 
-function point(t){
- return {
-  x:16*Math.pow(Math.sin(t),3),
-  y:-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))
- };
+<canvas id="matrix"></canvas>
+
+<div class="terminal">
+ <div id="title"></div>
+ <div id="text"></div>
+</div>
+
+<script>
+const canvas=document.getElementById("matrix");
+const ctx=canvas.getContext("2d");
+
+let columns,drops;
+
+function resize(){
+ canvas.width=innerWidth;
+ canvas.height=innerHeight;
+ columns=Math.floor(canvas.width/16);
+ drops=Array(columns).fill(1);
 }
-for(let i=0;i<700;i++){
- let t=Math.random()*Math.PI*2;
- let p=point(t);
- let scale=Math.min(w,h)/38;
- particles.push({
-  t,
-  spread:Math.random()*2.5,
-  x:Math.random()*w,
-  y:Math.random()*h,
-  speed:0.008+Math.random()*0.02,
-  char:Math.random()<.5?"0":"1"
- });
+resize();
+window.addEventListener("resize",resize);
+
+const chars="010101010101010101";
+
+function matrix(){
+ ctx.fillStyle="rgba(0,0,0,0.08)";
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ ctx.fillStyle="#00ff41";
+ ctx.font="15px monospace";
+
+ for(let i=0;i<drops.length;i++){
+  let char=chars[Math.floor(Math.random()*chars.length)];
+  ctx.fillText(char,i*16,drops[i]*16);
+
+  if(drops[i]*16>canvas.height && Math.random()>.975){
+   drops[i]=0;
+  }
+  drops[i]++;
+ }
+ requestAnimationFrame(matrix);
 }
-function draw(){
- ctx.clearRect(0,0,w,h);
- let scale=Math.min(w,h)/38;
- let pulse=1+Math.sin(Date.now()*.002)*.035;
- let cx=w/2,cy=h/2;
- particles.forEach((a,i)=>{
-  let p=point(a.t);
-  let tx=cx+p.x*scale*pulse;
-  let ty=cy+p.y*scale*pulse;
-  a.x+=(tx-a.x)*.035;
-  a.y+=(ty-a.y)*.035;
-  a.t+=a.speed;
-  ctx.fillStyle=i%3===0?"#ff65c5":"#ff168f";
-  ctx.shadowColor="#ff0088";
-  ctx.shadowBlur=8;
-  ctx.font="12px monospace";
-  ctx.fillText(a.char,a.x+a.spread,a.y);
- });
- ctx.shadowBlur=0;
- requestAnimationFrame(draw);
+matrix();
+
+const title="SYSTEM...";
+const messages=[
+ "> INITIALIZING SYSTEM",
+ "> CONNECTING...",
+ "> LOADING DATA",
+ "> ACCESS GRANTED",
+ "> SYSTEM READY"
+];
+
+let i=0;
+let j=0;
+
+function typeTitle(){
+ if(i<title.length){
+  document.getElementById("title").textContent+=title[i];
+  i++;
+  setTimeout(typeTitle,180);
+ }else{
+  typeMessages();
+ }
 }
-draw();
+
+function typeMessages(){
+ if(j<messages.length){
+  let line=document.createElement("div");
+  document.getElementById("text").appendChild(line);
+
+  let k=0;
+  function write(){
+   if(k<messages[j].length){
+    line.textContent+=messages[j][k];
+    k++;
+    setTimeout(write,55);
+   }else{
+    j++;
+    setTimeout(typeMessages,500);
+   }
+  }
+  write();
+ }
+}
+
+setTimeout(typeTitle,1500);
 </script>
 </body>
 </html>
