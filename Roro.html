@@ -4,10 +4,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SYSTEM</title>
+<title>SYSTEM SCANNER</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{box-sizing:border-box}
 body{
+ margin:0;
  background:#000;
  color:#00ff41;
  font-family:monospace;
@@ -18,32 +19,83 @@ canvas{
  inset:0;
  width:100%;
  height:100%;
+ opacity:.4;
 }
-.terminal{
- position:absolute;
- top:50%;
- left:50%;
- transform:translate(-50%,-50%);
- width:90%;
+.panel{
+ position:relative;
+ z-index:2;
+ padding:25px;
+ text-shadow:0 0 10px #00ff41;
+}
+h1{
  text-align:center;
- text-shadow:0 0 12px #00ff41;
+ font-size:30px;
+ margin-top:50px;
 }
-#title{
- font-size:clamp(30px,8vw,65px);
- font-weight:bold;
- letter-spacing:5px;
-}
-#text{
+.line{
+ border:1px solid #00ff41;
+ padding:15px;
  margin-top:20px;
- font-size:clamp(12px,3vw,18px);
- line-height:2;
+ box-shadow:0 0 12px #00ff41;
+}
+.bar{
+ height:12px;
+ border:1px solid #00ff41;
+ margin-top:15px;
+}
+.progress{
+ height:100%;
+ width:0;
+ background:#00ff41;
+ transition:width .12s linear;
+}
+#log{line-height:2}
+
+#skull{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:#000;
+ z-index:10;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
  color:#00ff41;
+ text-align:center;
+ text-shadow:0 0 15px #00ff41;
+ animation:appear 2s ease;
 }
-.cursor{
- animation:blink .7s infinite;
+
+.skull-icon{
+ width:220px;
+ max-width:65vw;
+ filter:drop-shadow(0 0 12px #00ff41);
+ animation:pulse 2s infinite;
 }
-@keyframes blink{
- 50%{opacity:0}
+
+.skull-icon svg{
+ width:100%;
+ height:auto;
+}
+
+#skull h1{
+ font-size:25px;
+ letter-spacing:4px;
+ margin-top:25px;
+}
+
+#skull p{
+ letter-spacing:2px;
+ font-size:12px;
+}
+
+@keyframes pulse{
+ 0%,100%{filter:drop-shadow(0 0 8px #00ff41)}
+ 50%{filter:drop-shadow(0 0 25px #00ff41)}
+}
+@keyframes appear{
+ from{opacity:0}
+ to{opacity:1}
 }
 </style>
 </head>
@@ -51,91 +103,146 @@ canvas{
 
 <canvas id="matrix"></canvas>
 
-<div class="terminal">
- <div id="title"></div>
- <div id="text"></div>
+<div class="panel" id="scanner">
+<h1>SYSTEM SCANNER</h1>
+<div class="line">
+<div id="log">INITIALIZING SYSTEM...</div>
+<div class="bar">
+<div class="progress" id="progress"></div>
+</div>
+<p id="percent">0%</p>
+</div>
+</div>
+
+<div id="skull">
+
+<div class="skull-icon">
+<svg viewBox="0 0 240 260" fill="none"
+xmlns="http://www.w3.org/2000/svg">
+
+<g stroke="#00ff41" stroke-width="3"
+stroke-linecap="round" stroke-linejoin="round">
+
+<!-- Skull outline -->
+<path d="M120 18
+C62 18 27 61 27 117
+C27 151 44 177 66 193
+L66 221
+L174 221
+L174 193
+C196 177 213 151 213 117
+C213 61 178 18 120 18Z"
+fill="#001508"/>
+
+<!-- Forehead details -->
+<path d="M72 53 Q120 30 168 53"
+opacity=".6"/>
+<path d="M60 75 Q120 48 180 75"
+opacity=".5"/>
+
+<!-- Eye sockets -->
+<path d="M48 116 L83 92 L105 119 L85 151 L56 145Z"
+fill="#00ff41" fill-opacity=".12"/>
+
+<path d="M192 116 L157 92 L135 119 L155 151 L184 145Z"
+fill="#00ff41" fill-opacity=".12"/>
+
+<!-- Nose -->
+<path d="M120 132 L108 158 L120 165 L132 158Z"
+fill="#00ff41" fill-opacity=".25"/>
+
+<!-- Jaw -->
+<path d="M67 176 L173 176 L166 207
+Q120 231 74 207Z"/>
+
+<!-- Teeth -->
+<path d="M85 179 V207 M103 179 V213
+M120 179 V216 M137 179 V213
+M155 179 V207"/>
+
+<!-- Tech details -->
+<path d="M27 105 H8 M213 105 H232
+M35 75 L17 65 M205 75 L223 65
+M84 232 H156" opacity=".8"/>
+
+<circle cx="120" cy="12" r="4" fill="#00ff41"/>
+<circle cx="120" cy="245" r="3" fill="#00ff41"/>
+
+</g>
+
+</svg>
+</div>
+
+<h1>SYSTEM TERMINATED</h1>
+<p>SCAN COMPLETE - 100%</p>
+<p>END OF SIMULATION</p>
+
 </div>
 
 <script>
-const canvas=document.getElementById("matrix");
-const ctx=canvas.getContext("2d");
-
-let columns,drops;
+const c=document.getElementById("matrix");
+const ctx=c.getContext("2d");
 
 function resize(){
- canvas.width=innerWidth;
- canvas.height=innerHeight;
- columns=Math.floor(canvas.width/16);
- drops=Array(columns).fill(1);
+ c.width=innerWidth;
+ c.height=innerHeight;
 }
 resize();
-window.addEventListener("resize",resize);
+onresize=resize;
 
-const chars="010101010101010101";
+const chars="010101010101";
+const size=16;
+let drops=Array(Math.ceil(c.width/size)).fill(1);
 
-function matrix(){
+function draw(){
  ctx.fillStyle="rgba(0,0,0,0.08)";
- ctx.fillRect(0,0,canvas.width,canvas.height);
-
+ ctx.fillRect(0,0,c.width,c.height);
  ctx.fillStyle="#00ff41";
- ctx.font="15px monospace";
+ ctx.font=size+"px monospace";
 
- for(let i=0;i<drops.length;i++){
-  let char=chars[Math.floor(Math.random()*chars.length)];
-  ctx.fillText(char,i*16,drops[i]*16);
-
-  if(drops[i]*16>canvas.height && Math.random()>.975){
-   drops[i]=0;
-  }
-  drops[i]++;
- }
- requestAnimationFrame(matrix);
+ drops.forEach((y,i)=>{
+ ctx.fillText(chars[Math.random()*chars.length|0],i*size,y*size);
+ if(y*size>c.height&&Math.random()>.975)drops[i]=0;
+ drops[i]++;
+ });
 }
-matrix();
+setInterval(draw,40);
 
-const title="SYSTEM...";
 const messages=[
- "> INITIALIZING SYSTEM",
- "> CONNECTING...",
- "> LOADING DATA",
- "> ACCESS GRANTED",
- "> SYSTEM READY"
+"CONNECTING TO SYSTEM...",
+"SCANNING NETWORK...",
+"ANALYZING DATA...",
+"CHECKING SECURITY...",
+"PROCESSING...",
+"SYSTEM SECURE."
 ];
 
 let i=0;
-let j=0;
+const log=document.getElementById("log");
 
-function typeTitle(){
- if(i<title.length){
-  document.getElementById("title").textContent+=title[i];
-  i++;
-  setTimeout(typeTitle,180);
- }else{
-  typeMessages();
+const messageTimer=setInterval(()=>{
+ if(i<messages.length){
+ log.innerHTML+="<br>"+messages[i];
+ i++;
  }
-}
+},2000);
 
-function typeMessages(){
- if(j<messages.length){
-  let line=document.createElement("div");
-  document.getElementById("text").appendChild(line);
-
-  let k=0;
-  function write(){
-   if(k<messages[j].length){
-    line.textContent+=messages[j][k];
-    k++;
-    setTimeout(write,55);
-   }else{
-    j++;
-    setTimeout(typeMessages,500);
-   }
-  }
-  write();
+let p=0;
+const scanTimer=setInterval(()=>{
+ if(p<100){
+ p++;
+ document.getElementById("percent").textContent=p+"%";
+ document.getElementById("progress").style.width=p+"%";
  }
-}
-
-setTimeout(typeTitle,1500);
+ if(p>=100){
+ clearInterval(scanTimer);
+ clearInterval(messageTimer);
+ setTimeout(()=>{
+ document.getElementById("scanner").style.display="none";
+ document.getElementById("skull").style.display="flex";
+ },500);
+ }
+},120);
 </script>
 </body>
 </html>
